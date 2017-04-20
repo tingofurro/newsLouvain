@@ -9,12 +9,12 @@ set<int> neighborCommunities(node_t* node, int *comm) {
 	}
 	return comm_set;
 }
-void buildCommunitySets(graph_t* graph) {
+// void buildCommunitySets(graph_t* graph) {
 	// This assumes that graph->nComm is correct
 
-	graph->commSets = new set<int>[graph->nComm];
-	int* comm = graph->comm;
-	for(int i = 0; i < graph->size; ++i) {graph->commSets[comm[i]].insert(i);}
+	// graph->commSets = new set<int>[graph->nComm];
+	// int* comm = graph->comm;
+	// for(int i = 0; i < graph->size; ++i) {graph->commSets[comm[i]].insert(i);}
 
 	// set<int>::iterator it;
 	// for(int i = 0; i < graph->nComm; ++i) {
@@ -23,34 +23,8 @@ void buildCommunitySets(graph_t* graph) {
 	// 		printf("%d\n", *it);
 	// 	}
 	// }
-}
-void computeSigmas(graph_t* graph) {
-	// This assumes graph->commSets is correct
-	set<int> comm_set;
-	graph->Sin = new float[graph->nComm];
-	graph->Stot = new float[graph->nComm];
+// }
 
-	int* comm = graph->comm;
-	float* Sin = graph->Sin;
-	float* Stot = graph->Stot;
-
-	set<int>::iterator it; node_t currentNode;
-	for(int i = 0; i < graph->nComm; ++i) {
-		set<int> commSet = graph->commSets[i];
-		Sin[i] = 0; Stot[i] = 0;
-		for (it = graph->commSets[i].begin(); it != graph->commSets[i].end(); ++it) {
-			currentNode = graph->nodes[*it];
-			Stot[i] += currentNode.degree;
-			for(int j = 0; j < currentNode.neighbors.size(); ++j) {
-				int currentNeighbor = currentNode.neighbors[j].target;
-				if(commSet.find(currentNeighbor) != commSet.end()) {
-					Sin[i] += 0.5*currentNode.neighbors[j].weight; // This is because edges will be double counted
-					Stot[i] -= 0.5*currentNode.neighbors[j].weight; // Remove the excess total counts
-				}
-			}
-		}
-	}
-}
 void removeNode(graph_t* graph, int currentNodeId) {
 	node_t currentNode = graph->nodes[currentNodeId];
 	int myComm = graph->comm[currentNodeId];
@@ -111,9 +85,10 @@ float computeDeltaQ(graph_t* graph, node_t currentNode, int currentComm) {
 	float E = (ki)  / (2*m);
 	return (A - B*B) - (C - D*D - E*E);
 }
-void phase1(graph_t* graph) {
+int phase1(graph_t* graph) {
 	int* comm = graph->comm;
 	bool anyChange = true;
+	int numChanges = 0;
 	int* nodeOrder = new int[graph->size];
 	for(int i = 0; i < graph->size; ++i) {nodeOrder[i] = i;}
 	
@@ -148,8 +123,10 @@ void phase1(graph_t* graph) {
 			}
 			addNode(graph, currentNodeId, maxComm);
 			anyChange = anyChange || (maxComm != oldComm);
+			if(maxComm != oldComm) {numChanges ++;}
 			// printf("My old comm was: %d, my new comm is %d, the change: %d\n", oldComm, maxComm, (anyChange?1:0));
 			// printf("-------------------\n");
 		}
 	}
+	return numChanges;
 }

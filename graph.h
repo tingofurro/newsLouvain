@@ -29,10 +29,9 @@ struct graph {
 	int size;
 	node_t* nodes;
 
-	int nEdges;
-	int nComm; // Number of communities = 3
+	float nEdges;
 	int* comm; // 0, 1, 2, 2, 1, 2, 2, 1, 1
-	set<int> *commSets; // 0->[0], 1->[1,4,7,8], 2->[2,3,5,6]
+	// set<int> *commSets; // 0->[0], 1->[1,4,7,8], 2->[2,3,5,6]
 
 	float* Sin;
 	float* Stot;
@@ -41,3 +40,5 @@ struct graph {
 typedef struct graph graph_t;
 
 graph_t* createGraphFromFile(const char *filename);
+void computeSigmas(graph_t* graph);
+graph_t* mergeGraph(graph_t* graph);
