@@ -21,7 +21,7 @@ graph_t* mergeGraph(graph_t* graph, int* comm) {
 	printf("comm_set size: %d\n", newGraph->size);
 	for (int i = 0; i < graph->size; ++i) {
 		int cur_comm = comm[i];
-		std::vector<edge_t> cur_neighbors = newGraph->nodes[cur_comm].neighbors;
+	    std::vector<edge_t> cur_neighbors = newGraph->nodes[cur_comm].neighbors;
 		std::vector<edge_t> old_neighbors = graph->nodes[i].neighbors;
 		
 		std::vector<int> cur_neighbors_nodes;
@@ -30,21 +30,28 @@ graph_t* mergeGraph(graph_t* graph, int* comm) {
 		}
 
 		for(int j = 0; j < old_neighbors.size(); ++j) {
+
 			int old_neighbor_comm = comm[old_neighbors[j].target];
 			int exist = 0;
-			for (int k = 0; k < cur_neighbors_nodes.size(); ++k) {
-				if (cur_neighbors_nodes[k] == old_neighbor_comm) {
-					cur_neighbors[k].weight += old_neighbors[j].weight;
+
+			for (int k = 0; k < newGraph->nodes[cur_comm].neighbors.size(); ++k) {
+
+				if (newGraph->nodes[cur_comm].neighbors[k].target == old_neighbor_comm) {
 					exist = 1;
+					if (cur_comm != old_neighbor_comm || i < old_neighbors[j].target) {
+						newGraph->nodes[cur_comm].neighbors[k].weight += old_neighbors[j].weight;
+						newGraph->nodes[cur_comm].degree++;
+					}
+					
 				}
 			}
 			// edge does not yet exist
 			if (exist == 0) {
 				edge_t *edgePtr = (edge_t*) malloc(sizeof(edge_t));
 				edgePtr->target = old_neighbor_comm; edgePtr->weight = old_neighbors[j].weight; 
-				cur_neighbors.push_back(*edgePtr);
-				newGraph->nodes[i].degree++;
-				printf("need to push %d to %d's neighbor list\n", old_neighbor_comm, cur_comm); 
+				newGraph->nodes[cur_comm].neighbors.push_back(*edgePtr);
+				newGraph->nodes[cur_comm].degree++;
+				//printf("need to push %d to %d's neighbor list\n", old_neighbors[j].target, cur_comm); 
 
 			}
 		}

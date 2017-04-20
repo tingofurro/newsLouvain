@@ -1,2 +1,2 @@
 g++ serial.cpp -o serial
-./serial graph/graph2.txt
+./serial graph/graph3.txt
