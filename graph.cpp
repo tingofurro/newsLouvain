@@ -13,6 +13,7 @@ graph_t* createGraphFromFile(const char *filename) {
 	n = atoi(working_buffer);
 	graph->size = n;
 	graph->nodes = (node_t*) malloc(sizeof(node_t)*n);
+	printf("%d\n", n);
 	while (fgets(working_buffer, sizeof(working_buffer), f) != NULL) {
 
 		source = strtok(working_buffer, ":");
