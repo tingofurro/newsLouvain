@@ -20,7 +20,7 @@ typedef struct edge edge_t;
 
 struct node {
 	vector<edge_t> neighbors;
-	int degree;
+	float degree;
 };
 
 typedef struct node node_t;
@@ -29,6 +29,7 @@ struct graph {
 	int size;
 	node_t* nodes;
 
+	int nEdges;
 	int nComm; // Number of communities = 3
 	int* comm; // 0, 1, 2, 2, 1, 2, 2, 1, 1
 	set<int> *commSets; // 0->[0], 1->[1,4,7,8], 2->[2,3,5,6]

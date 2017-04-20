@@ -32,6 +32,7 @@ graph_t* createGraphFromFile(const char *filename) {
 			degree ++;			
 		}
 		(graph->nodes)[source_index].degree = degree;
+		(graph->nEdges) += degree;
 	}
 	return graph;
 }
