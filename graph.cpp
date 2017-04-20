@@ -13,12 +13,10 @@ graph_t* createGraphFromFile(const char *filename) {
 	n = atoi(working_buffer);
 	graph->size = n;
 	graph->nodes = (node_t*) malloc(sizeof(node_t)*n);
-	printf("%d\n", n);
 	while (fgets(working_buffer, sizeof(working_buffer), f) != NULL) {
 
 		source = strtok(working_buffer, ":");
 		int source_index = atoi(source);
-
 		targetList = strtok(NULL, ":");
 		target = strtok(targetList, ",");
 		edge_t* edgePtr = (edge_t*) malloc(sizeof(edge_t));
@@ -39,13 +37,13 @@ graph_t* createGraphFromFile(const char *filename) {
 	// Initialize the communities
 	// For the graph we were playing with
 	graph->comm = new int[graph->size];
-	for(int i  = 0; i < graph->size; ++i) {
-		if(i == 0) {graph->comm[i] = 0;}
-		if(i == 1 || i == 4 || i == 7 || i == 8) {graph->comm[i] = 1;}
-		if(i == 2 || i == 3 || i == 5 || i == 6) {graph->comm[i] = 2;}
-	}
+	// for(int i  = 0; i < graph->size; ++i) {
+	// 	if(i == 0) {graph->comm[i] = 0;}
+	// 	if(i == 1 || i == 4 || i == 7 || i == 8) {graph->comm[i] = 1;}
+	// 	if(i == 2 || i == 3 || i == 5 || i == 6) {graph->comm[i] = 2;}
+	// }
 
-	// for(int i  = 0; i < graph->size; ++i) {graph->comm[i] = i;}
+	for(int i  = 0; i < graph->size; ++i) {graph->comm[i] = i;}
 	computeSigmas(graph);
 
 	return graph;
@@ -80,7 +78,7 @@ void computeSigmas(graph_t* graph) {
 	// 	printf("Sin[%d] = %.2f, Stot[%d] = %.2f\n", i, Sin[i], i, Stot[i]);
 	// }
 }
-graph_t* compactComm(graph_t* graph) {
+void compactComm(graph_t* graph) {
 	int* comm = graph->comm;
 	// We merge back the communities into a good range
 	int* newCommNbs = new int[graph->size]; // This is an upperbound... yolo
@@ -106,13 +104,13 @@ graph_t* mergeGraph(graph_t* graph) {
 	std::set<int> comm_set;
 	for (int i = 0; i < graph->size; ++i) {comm_set.insert(comm[i]);}
 	newGraph->size = comm_set.size();
-	newGraph->nodes = (node_t*) malloc(comm_set.size() * sizeof(node_t));
+
+	newGraph->nodes = new node_t[newGraph->size];
 	for (int i = 0; i < graph->size; ++i) {
 		int cur_comm = comm[i];
 		std::vector<edge_t> old_neighbors = graph->nodes[i].neighbors;
 		
 		for(int j = 0; j < old_neighbors.size(); ++j) {
-
 			int neighbor_comm = comm[old_neighbors[j].target];
 			int exist = 0;
 			float ratio = (neighbor_comm==cur_comm)?0.5:1.0;
@@ -125,7 +123,7 @@ graph_t* mergeGraph(graph_t* graph) {
 			}
 			// edge does not yet exist
 			if (exist == 0) {
-				edge_t *edgePtr = (edge_t*) malloc(sizeof(edge_t));
+				edge_t* edgePtr = new edge_t;
 				edgePtr->target = neighbor_comm; edgePtr->weight = ratio*old_neighbors[j].weight; 
 				newGraph->nodes[cur_comm].neighbors.push_back(*edgePtr);
 			}
