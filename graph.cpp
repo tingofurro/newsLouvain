@@ -69,8 +69,9 @@ void computeSigmas(graph_t* graph) {
 		for(int j = 0; j < currentNode.neighbors.size(); ++j) {
 			int currentNeighborId = currentNode.neighbors[j].target;
 			if(comm[currentNeighborId] == currentComm) {
-				Sin[currentComm] += 0.5*currentNode.neighbors[j].weight; // This is because edges will be double counted
-				Stot[currentComm] -= 0.5*currentNode.neighbors[j].weight; // Remove the excess total counts
+				float ratio = (currentNeighborId != currentNodeId)?0.5:1.0;
+				Sin[currentComm] += ratio*currentNode.neighbors[j].weight; // This is because edges will be double counted
+				// Stot[currentComm] -= ratio*currentNode.neighbors[j].weight; // Remove the excess total counts
 			}
 		}
 	}
@@ -78,6 +79,30 @@ void computeSigmas(graph_t* graph) {
 	// 	printf("Sin[%d] = %.2f, Stot[%d] = %.2f\n", i, Sin[i], i, Stot[i]);
 	// }
 }
+void print_graph(graph_t* graph) {
+	printf("Printing graph. %.2f\n", graph->nEdges);
+	for(int i = 0; i < graph->size; ++i) {
+		printf("--- Node %d (deg = %.2f)\n", i, graph->nodes[i].degree);
+		vector<edge_t> neighbors = graph->nodes[i].neighbors;
+		for(int j = 0; j < neighbors.size(); ++j) {
+			printf("%d -> %d : %.2f\n", i, neighbors[j].target, neighbors[j].weight);
+		}
+	}
+}
+
+void print_sigmas(graph_t* graph) {
+	float* Sin = graph->Sin;
+	float* Stot = graph->Stot;
+	float totEdges = 0.0;
+	// printf("=======\n");
+	for(int i = 0; i < graph->size; ++i) {
+		totEdges += Sin[i] + 0.5*(Stot[i]-Sin[i]);
+		printf("Sin[%d] = %.2f, Stot[%d] = %.2f\n", i, Sin[i], i, Stot[i]);
+	}
+	printf("%.2f\n", totEdges);
+}
+
+
 void compactComm(graph_t* graph) {
 	int* comm = graph->comm;
 	// We merge back the communities into a good range
@@ -104,8 +129,12 @@ graph_t* mergeGraph(graph_t* graph) {
 	std::set<int> comm_set;
 	for (int i = 0; i < graph->size; ++i) {comm_set.insert(comm[i]);}
 	newGraph->size = comm_set.size();
-
 	newGraph->nodes = new node_t[newGraph->size];
+
+	for(int i = 0; i < newGraph->size; ++i) {
+		newGraph->nodes[i].degree = 0.0;
+	}
+
 	for (int i = 0; i < graph->size; ++i) {
 		int cur_comm = comm[i];
 		std::vector<edge_t> old_neighbors = graph->nodes[i].neighbors;
@@ -113,7 +142,7 @@ graph_t* mergeGraph(graph_t* graph) {
 		for(int j = 0; j < old_neighbors.size(); ++j) {
 			int neighbor_comm = comm[old_neighbors[j].target];
 			int exist = 0;
-			float ratio = (neighbor_comm==cur_comm)?0.5:1.0;
+			float ratio = (neighbor_comm==cur_comm && i != old_neighbors[j].target)?0.5:1.0;
 			for (int k = 0; k < newGraph->nodes[cur_comm].neighbors.size(); ++k) {
 				if (newGraph->nodes[cur_comm].neighbors[k].target == neighbor_comm) {
 					newGraph->nodes[cur_comm].neighbors[k].weight += ratio*old_neighbors[j].weight;
@@ -127,8 +156,11 @@ graph_t* mergeGraph(graph_t* graph) {
 				edgePtr->target = neighbor_comm; edgePtr->weight = ratio*old_neighbors[j].weight; 
 				newGraph->nodes[cur_comm].neighbors.push_back(*edgePtr);
 			}
-			newGraph->nodes[cur_comm].degree += old_neighbors[j].weight;
-			newGraph->nEdges += 0.5*old_neighbors[j].weight;
+			float ratio2 = (i != old_neighbors[j].target)?0.5:1.0;
+
+			newGraph->nodes[cur_comm].degree += ratio*old_neighbors[j].weight;
+
+			newGraph->nEdges += ratio2*old_neighbors[j].weight;
 		}
 	}
 	// for(int i = 0; i < newGraph->size; ++i) {
@@ -140,7 +172,9 @@ graph_t* mergeGraph(graph_t* graph) {
 	// }
 	newGraph->comm = new int[newGraph->size];
 	for(int i  = 0; i < newGraph->size; ++i) {newGraph->comm[i] = i;}
-	computeSigmas(newGraph);
+	// print_graph(newGraph);
 
+	computeSigmas(newGraph);
+	// print_sigmas(newGraph);
 	return newGraph;
 }
