@@ -5,16 +5,18 @@ graph_t* createGraphFromFile(const char *filename) {
 
 	FILE *f = fopen(filename, "r");
 	char working_buffer[MAX_LINE_SIZE];
+	printf("%s for %s\n", "Initialized working_buffer", filename);
 	char* source;
 	char* targetList;
 	char* target;
 	int n;
 	fgets(working_buffer, sizeof(working_buffer), f);
+	printf("%s\n", "read first line");
 	n = atoi(working_buffer);
 	graph->size = n;
 	graph->nodes = (node_t*) malloc(sizeof(node_t)*n);
 	while (fgets(working_buffer, sizeof(working_buffer), f) != NULL) {
-
+		//printf("%s\n", "read another line");
 		source = strtok(working_buffer, ":");
 		int source_index = atoi(source);
 		targetList = strtok(NULL, ":");
@@ -98,6 +100,8 @@ void compactComm(graph_t* graph) {
 
 	delete [] newCommNbs;
 }
+
+
 graph_t* mergeGraph(graph_t* graph) {
 	int* comm = graph->comm;
 	graph_t* newGraph = (graph_t*) malloc(sizeof(graph_t));
@@ -113,10 +117,10 @@ graph_t* mergeGraph(graph_t* graph) {
 		for(int j = 0; j < old_neighbors.size(); ++j) {
 			int neighbor_comm = comm[old_neighbors[j].target];
 			int exist = 0;
-			float ratio = (neighbor_comm==cur_comm)?0.5:1.0;
+			//float ratio = (neighbor_comm==cur_comm)?0.5:1.0;
 			for (int k = 0; k < newGraph->nodes[cur_comm].neighbors.size(); ++k) {
-				if (newGraph->nodes[cur_comm].neighbors[k].target == neighbor_comm) {
-					newGraph->nodes[cur_comm].neighbors[k].weight += ratio*old_neighbors[j].weight;
+				if (newGraph->nodes[cur_comm].neighbors[k].target == neighbor_comm && cur_comm < newGraph->nodes[cur_comm].neighbors[k].target) {
+					newGraph->nodes[cur_comm].neighbors[k].weight += old_neighbors[j].weight;
 					exist = 1;
 					break;
 				}
@@ -124,7 +128,7 @@ graph_t* mergeGraph(graph_t* graph) {
 			// edge does not yet exist
 			if (exist == 0) {
 				edge_t* edgePtr = new edge_t;
-				edgePtr->target = neighbor_comm; edgePtr->weight = ratio*old_neighbors[j].weight; 
+				edgePtr->target = neighbor_comm; edgePtr->weight = old_neighbors[j].weight; 
 				newGraph->nodes[cur_comm].neighbors.push_back(*edgePtr);
 			}
 			newGraph->nodes[cur_comm].degree += old_neighbors[j].weight;

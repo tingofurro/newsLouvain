@@ -1,2 +1,2 @@
 g++ serial.cpp -o serial
-./serial graph/karate.txt
+./serial graph/graph3days.txt

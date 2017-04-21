@@ -8,7 +8,7 @@
 #include <set>
 
 #ifndef MAX_LINE_SIZE
-#define MAX_LINE_SIZE 1000
+#define MAX_LINE_SIZE 500
 #endif
 
 using namespace std;

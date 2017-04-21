@@ -121,8 +121,10 @@ int phase1(graph_t* graph) {
 					maxDeltaQ = deltaQ; maxComm = currentComm;
 				}
 			}
+
 			addNode(graph, currentNodeId, maxComm);
 			anyChange = anyChange || (maxComm != oldComm);
+			
 			if(maxComm != oldComm) {numChanges ++;}
 			// printf("My old comm was: %d, my new comm is %d, the change: %d\n", oldComm, maxComm, (anyChange?1:0));
 			// printf("-------------------\n");
