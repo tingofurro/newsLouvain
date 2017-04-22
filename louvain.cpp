@@ -9,21 +9,6 @@ set<int> neighborCommunities(node_t* node, int *comm) {
 	}
 	return comm_set;
 }
-// void buildCommunitySets(graph_t* graph) {
-	// This assumes that graph->nComm is correct
-
-	// graph->commSets = new set<int>[graph->nComm];
-	// int* comm = graph->comm;
-	// for(int i = 0; i < graph->size; ++i) {graph->commSets[comm[i]].insert(i);}
-
-	// set<int>::iterator it;
-	// for(int i = 0; i < graph->nComm; ++i) {
-	// 	printf("---------------\n");
-	// 	for (it = graph->commSets[i].begin(); it != graph->commSets[i].end(); ++it) {
-	// 		printf("%d\n", *it);
-	// 	}
-	// }
-// }
 
 void removeNode(graph_t* graph, int currentNodeId) {
 	node_t currentNode = graph->nodes[currentNodeId];
@@ -96,8 +81,11 @@ int phase1(graph_t* graph) {
 	set<int>::iterator it;
 
 	while(anyChange) {
-		// printf("New full phase is starting\n");
+		// printf("New full phase 1 is starting %d\n", numChanges);
 		anyChange = false;
+		random_shuffle(&nodeOrder[0], &nodeOrder[graph->size]);
+		random_shuffle(&nodeOrder[0], &nodeOrder[graph->size]);
+		random_shuffle(&nodeOrder[0], &nodeOrder[graph->size]);
 		random_shuffle(&nodeOrder[0], &nodeOrder[graph->size]);
 		// will start with just doing node 0
 		for(int i = 0; i < graph->size; i++) {
@@ -107,8 +95,6 @@ int phase1(graph_t* graph) {
 			comm_set = neighborCommunities(&currentNode, comm);
 			int oldComm = comm[currentNodeId];
 			comm_set.insert(oldComm); // Add my own community to the choices
-			// for (it = comm_set.begin(); it != comm_set.end(); ++it) {printf("%d, ", *it);}
-			// printf("\n");
 			
 			// Update the Sigmas to be without that node
 			removeNode(graph, currentNodeId);
@@ -122,7 +108,10 @@ int phase1(graph_t* graph) {
 				}
 			}
 
+			// printf("%d: maxDeltaQ: %.2f %d %d \n", currentNodeId, maxDeltaQ, oldComm, maxComm);
+
 			addNode(graph, currentNodeId, maxComm);
+			// print_sigmas(graph);
 			anyChange = anyChange || (maxComm != oldComm);
 			
 			if(maxComm != oldComm) {numChanges ++;}
