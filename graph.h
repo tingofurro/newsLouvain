@@ -42,3 +42,4 @@ typedef struct graph graph_t;
 graph_t* createGraphFromFile(const char *filename);
 void computeSigmas(graph_t* graph);
 graph_t* mergeGraph(graph_t* graph);
+void print_sigmas(graph_t* graph);

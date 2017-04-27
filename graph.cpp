@@ -90,6 +90,55 @@ graph_t* createMasterGraph(const char *filename, int* steps, map<int,int>* idx2b
 	return graphs;
 }
 
+graph_t* createGraph(const char *filename) {
+	string line, token;
+	ifstream myfile (filename);
+	int n;
+	getline(myfile, line);
+	stringstream ss(line);
+	int i = 0;
+	while(getline(ss, token, '|')) {
+		if(i == 0) {n = atoi(token.c_str());}
+		i ++;
+	}
+	graph_t* graph = new graph_t;
+	graph->size = n;
+	graph->nodes = new node_t[n];
+
+	while (getline(myfile, line)) {
+		stringstream ss(line);
+		int i = 0, source_index, target_index;
+		int degree = 0;
+		while(getline(ss, token, '|')) {
+			if(i == 0) {source_index = atoi(token.c_str());}
+			
+			if(i == 2) {
+				string token2;
+				stringstream ss2(token);
+				while(getline(ss2, token2, ',')) {
+					target_index = atoi(token2.c_str());
+					edge_t* edgePtr = (edge_t*) malloc(sizeof(edge_t));
+					edgePtr->target = target_index; edgePtr->weight = 1.0; 
+					graph->nodes[source_index].neighbors.push_back(*edgePtr);
+
+					degree ++;			
+				}
+				(graph->nodes)[source_index].degree = degree;
+				(graph->nEdges) += 0.5*degree;
+			}	
+			i ++;
+		}
+	}
+
+	graph->comm = new int[graph->size];
+
+	for(int i  = 0; i < graph->size; ++i) {graph->comm[i] = i;}
+	computeSigmas(graph);
+	//print_sigmas(graph);
+
+	return graph;
+
+}
 
 graph_t* createGraphFromFile(const char *filename) {
 	graph_t * graph = (graph_t *) malloc(sizeof(graph_t));
