@@ -1,4 +1,95 @@
 #include "graph.h"
+#include <map>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+using namespace std;
+typedef pair<int, int> keyPair;
+
+graph_t* createMasterGraph(const char *filename, int* steps, map<int,int>* idx2bucket, map<int,int>* localindex, map<keyPair, int>* globalindex) {
+	string line, token;
+	ifstream myfile (filename);
+	int n, minTime, maxTime;
+	getline(myfile, line);
+	stringstream ss(line);
+	int i = 0;
+	while(getline(ss, token, '|')) {
+		if(i == 0) {n = atoi(token.c_str());}
+		if(i == 1) {minTime = atoi(token.c_str());}
+		if(i == 2) {maxTime = atoi(token.c_str());}
+		i ++;
+	}
+	int range = maxTime-minTime;
+	int secPerStep = 30*24*60*60;
+	*steps = (range+secPerStep-1) / secPerStep; // number of graphs we need to create
+	graph_t* graphs;
+	graphs = new graph_t[(*steps)];
+	int* numNodes = new int[(*steps)];
+	for(int i = 0; i < (*steps); ++i) {numNodes[i] = 0;}
+	while (getline(myfile, line)) {
+		stringstream ss(line);
+		int i = 0, source_index, source_bucket;
+		while(getline(ss, token, '|')) {
+			if(i == 0) {source_index = atoi(token.c_str());}
+			if(i == 1) {
+				source_bucket = (atoi(token.c_str())-minTime)/secPerStep;
+				(*localindex)[source_index] = numNodes[source_bucket];
+				(*globalindex)[{source_bucket, numNodes[source_bucket]}] = source_index;
+				numNodes[source_bucket] ++;
+			}
+			i ++;
+		}
+		(*idx2bucket)[source_index] = source_bucket;
+	}
+
+	for(int i = 0; i < (*steps); ++i) {
+		graphs[i].size = numNodes[i];
+		graphs[i].nodes = new node_t[numNodes[i]];
+	}
+
+	myfile.clear(); myfile.seekg(0);
+
+
+	string token2;
+	getline(myfile, line); // skip first line
+	while (getline(myfile, line)) {
+		stringstream ss(line);
+		int i  = 0, source_index, source_bucket, target_index;
+		float degree = 0.0;
+		while(getline(ss, token, '|')) {
+			if(i == 0) {source_index = atoi(token.c_str());}
+			if(i == 1) {
+				source_bucket = (atoi(token.c_str())-minTime)/secPerStep;
+			}
+			if(i == 2) {
+				stringstream ss2(token);
+				while(getline(ss2, token2, ',')) {
+					target_index = atoi(token2.c_str());
+					if((*idx2bucket)[source_index] == (*idx2bucket)[target_index]) {
+						edge_t* edgePtr = new edge_t;
+						edgePtr->target = (*localindex)[target_index]; edgePtr->weight = 1.0;
+						graphs[source_bucket].nodes[(*localindex)[source_index]].neighbors.push_back(*edgePtr);
+						degree += 1.0;
+					}
+				}
+			}	
+			i ++;
+		}
+		graphs[source_bucket].nodes[(*localindex)[source_index]].degree = degree;
+		graphs[source_bucket].nEdges += 0.5*degree;
+	}
+
+	for(int i = 0; i < (*steps); ++i) {
+		graphs[i].comm = new int[graphs[i].size];
+		for(int j  = 0; j < graphs[i].size; ++j) {graphs[i].comm[j] = j;}
+		computeSigmas(&graphs[i]);
+		// print_sigmas(&graphs[i]);
+	}
+	return graphs;
+}
+
 
 graph_t* createGraphFromFile(const char *filename) {
 	graph_t * graph = (graph_t *) malloc(sizeof(graph_t));
@@ -39,11 +130,6 @@ graph_t* createGraphFromFile(const char *filename) {
 	// Initialize the communities
 	// For the graph we were playing with
 	graph->comm = new int[graph->size];
-	// for(int i  = 0; i < graph->size; ++i) {
-	// 	if(i == 0) {graph->comm[i] = 0;}
-	// 	if(i == 1 || i == 4 || i == 7 || i == 8) {graph->comm[i] = 1;}
-	// 	if(i == 2 || i == 3 || i == 5 || i == 6) {graph->comm[i] = 2;}
-	// }
 
 	for(int i  = 0; i < graph->size; ++i) {graph->comm[i] = i;}
 	computeSigmas(graph);
@@ -73,13 +159,9 @@ void computeSigmas(graph_t* graph) {
 			if(comm[currentNeighborId] == currentComm) {
 				float ratio = (currentNeighborId != currentNodeId)?0.5:1.0;
 				Sin[currentComm] += ratio*currentNode.neighbors[j].weight; // This is because edges will be double counted
-				// Stot[currentComm] -= ratio*currentNode.neighbors[j].weight; // Remove the excess total counts
 			}
 		}
 	}
-	// for(int i = 0; i < graph->size; ++i) {
-	// 	printf("Sin[%d] = %.2f, Stot[%d] = %.2f\n", i, Sin[i], i, Stot[i]);
-	// }
 }
 void print_graph(graph_t* graph) {
 	printf("Printing graph. %.2f\n", graph->nEdges);
