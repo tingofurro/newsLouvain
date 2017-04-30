@@ -28,9 +28,14 @@ int* louvain(graph_t* graph, int* nComms) {
 
 int main(int argc, char **argv) {
 	
+	double graph_creation_time = read_timer();
 	graph_t* serialGraph = createGraph("graph/graph0years.txt");
+	graph_creation_time = read_timer() - graph_creation_time;
+
 	int* nComms = new int;
+	double simulation_time = read_timer();
 	int* keepTrackComm = louvain(serialGraph, nComms);
+	simulation_time = read_timer() - simulation_time;
 	cout << *nComms << endl;
 
 	ofstream outfile;
@@ -39,6 +44,12 @@ int main(int argc, char **argv) {
 		outfile << keepTrackComm[i] << endl;
 
 	}
+	outfile.close();
+
+	outfile.open("serial-time.out");
+	outfile << "graph creation time: " << graph_creation_time << endl;
+	outfile << "simulation time: " << simulation_time << endl;
+	outfile << "total run time: " << graph_creation_time + simulation_time << endl;
 	outfile.close();
 
 }

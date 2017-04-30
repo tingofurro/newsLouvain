@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
 	map<keyPair, int> globalindex;
 	int steps;
 	string filename = "graph/graph0years.txt";
-
+	double graph_creation_time = read_timer();
 	graph_t* graphs = createMasterGraph("graph/graph0years.txt", &steps, &idx2bucket, &localindex, &globalindex);
-
+	graph_creation_time = read_timer() - graph_creation_time;
 	int glob = globalindex[{11, 103}];
 
 	// DIR *dir;
@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
 	map<keyPair, int> globalComm;
 	int globalCount = 0;
 	int totalNodes = 0;
+	double louvain_first_run = read_timer( ); 
 	// #pragma omp parallel for 
 	for (int i = 0; i < steps; i++) {
 		// char full_path[strlen("graph/")+strlen(graph_files[i])];
@@ -79,6 +80,11 @@ int main(int argc, char **argv) {
 			globalCount ++;
 		}
 	}
+
+	louvain_first_run = read_timer() - louvain_first_run;
+
+	double recreate_graph_time = read_timer();
+
 	graph_t* globalGraph = new graph_t;
 	globalGraph->size = globalCount;
 	globalGraph->nodes = new node_t[globalCount];
@@ -142,16 +148,22 @@ int main(int argc, char **argv) {
 	for(int i  = 0; i < globalGraph->size; ++i) {globalGraph->comm[i] = i;}
 	computeSigmas(globalGraph);
 
+	recreate_graph_time = read_timer() - recreate_graph_time;
+	
+
 	float* Sin = globalGraph->Sin;
 	float* Stot = globalGraph->Stot;
 	float totEdges = 0.0;
 	
 	int nComms;
+	double louvain_last_run = read_timer( );
 	int* finalGcomms = louvain(globalGraph, &nComms);
+	louvain_last_run = read_timer() - louvain_last_run;
+	
 	int* keepTrackComm = new int[totalNodes];
 
 	ofstream outfile;
-	outfile.open("comm.out");
+	outfile.open("comm-omp.out");
 
 	int bucket, localidx, lcomm, gcomm;
 	for(int i = 0; i < totalNodes; ++i) {
@@ -164,6 +176,15 @@ int main(int argc, char **argv) {
 		outfile << keepTrackComm[i] << endl;
 
 	}
+	outfile.close();
+
+	outfile.open("omp-time.out");
+	outfile << "Using step: " << steps << endl;
+	outfile << "Creating initial graph: " << graph_creation_time << endl;
+	outfile << "Parallel Louvain: " << louvain_first_run << endl;
+	outfile << "Recreate graph: " << recreate_graph_time << endl;
+	outfile << "Last run of serial Louvain: " << louvain_last_run << endl;
+	outfile << "total running time: " << graph_creation_time + louvain_first_run + recreate_graph_time + louvain_last_run << endl;
 	outfile.close();
 
 }
